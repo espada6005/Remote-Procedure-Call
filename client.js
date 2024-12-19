@@ -32,3 +32,16 @@ function isNumericString(str) {
     return !isNaN(num) && str === num.toString();
 }
 
+function validateParams(method, params) {
+    if (!Array.isArray(params)) {
+        return false;
+    }
+
+    if (method == "floor") {
+        return params.length === 1 && isNumericString(params[0]);
+    } else if (method == "nroot") {
+        return (
+            params.length === 2 && params.every((params) => isNumericString(params))
+        );
+    }
+}
