@@ -1,4 +1,5 @@
 import net from "net";
+import { config } from "process";
 import readline from "readline";
 
 const client = new net.Socket();
@@ -43,5 +44,50 @@ function validateParams(method, params) {
         return (
             params.length === 2 && params.every((params) => isNumericString(params))
         );
+    } else if (method == "reverse") {
+        return params.length === 1
+    } else if (method == "validAnagram") {
+        return params.length === 2;
+    } else if (method == "sort") {
+        return params.length >= 1;
+    } else {
+        return false;
+    }
+}
+
+async function main() {
+    while (true) {
+        const id = await question("ID: ");
+
+        requestData.id = Number(id);
+        if (!isNaN(requestData.id)) {
+            break;
+        } else {
+            console.log("数字を入力してください");
+        }
+    }
+
+    while (true) {
+        const method = await question("メソッド名を入力してください")
+
+        requestData.method = method;
+        if (methodList.includes(method)) {
+            break;
+        } else {
+            console.log("有効なメソッド名を入力してください");
+        }
+    }
+
+    while (true) {
+        const paramsStr = await question("引数: ");
+
+        const params = paramsStr.split(" ");
+
+        if (validateParams(requestData.method, params)) {
+            requestData.params = params;
+            break;
+        } else {
+            console.log("有効な引数を入力してください");
+        }
     }
 }
