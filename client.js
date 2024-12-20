@@ -90,4 +90,25 @@ async function main() {
             console.log("有効な引数を入力してください");
         }
     }
+
+    client.connect(server_address, () => {
+        console.log("サーバーに接続");
+        client.write(JSON.stringify(requestData));
+    });
+
+    client.on("data", (data) => {
+        console.log(`レスポンス: ${data}`);
+        client.destroy();
+    });
+
+    client.on("close", () => {
+        console.log("接続が閉じられました");
+    });
+
+    client.on("error"), (err) => {
+        console.log(`エラー： ${err.message}`);
+        process.exit(1);
+    }
 }
+
+main();
