@@ -68,7 +68,7 @@ async function main() {
     }
 
     while (true) {
-        const method = await question("メソッド名を入力してください")
+        const method = await question("メソッド: ")
 
         requestData.method = method;
         if (methodList.includes(method)) {
@@ -105,10 +105,10 @@ async function main() {
         console.log("接続が閉じられました");
     });
 
-    client.on("error"), (err) => {
+    client.on("error", (err) => {
         console.log(`エラー： ${err.message}`);
         process.exit(1);
-    }
+    });
 }
 
 main();
