@@ -3,111 +3,105 @@ import os
 import json
 
 class Calculation:
-    def floor(self, x):
+    @staticmethod
+    def floor(x):
         return int(x // 1)
 
-    def nroot(self, n, x):
+    @staticmethod
+    def nroot(n, x):
         return x ** (1 / n)
 
-    def reverse(self, s):
+    @staticmethod
+    def reverse(s):
         return s[::-1]
 
-    def validAnagram(self, str1, str2):
+    @staticmethod
+    def validAnagram(str1, str2):
         return sorted(str1) == sorted(str2)
 
-    def sort(self, strArr):
+    @staticmethod
+    def sort(strArr):
         return sorted(strArr)
 
-def main():
-    calculation_instance = Calculation()
+class RequestHandler:
+    def __init__(self):
+        self.method_hashmap = {
+            "floor": Calculation.floor,
+            "nroot": Calculation.nroot,
+            "reverse": Calculation.reverse,
+            "validAnagram": Calculation.validAnagram,
+            "sort": Calculation.sort,
+        }
 
-    method_hashmap = {
-        "floor": calculation_instance.floor,
-        "nroot": calculation_instance.nroot,
-        "reverse": calculation_instance.reverse,
-        "validAnagram": calculation_instance.validAnagram,
-        "sort": calculation_instance.sort,
-    }
-
-    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-
-    server_address = "./socket_file"
-
-    try:
-        os.unlink(server_address)
-    except FileNotFoundError:
-        pass
-
-    print("Starting up on {}".format(server_address))
-
-    sock.bind(server_address)
-
-    sock.listen(1)
-
-    while True:
-        connection, client_address = sock.accept()
+    def handle_request(self, data):
         try:
-            print("connection from", client_address)
+            received_data = json.loads(data)
+            method = received_data["method"]
+            params = received_data["params"]
+            id = received_data["id"]
 
-            while True:
-                data = connection.recv(1024)
+            if method == "floor":
+                params = [float(param) for param in params]
+            elif method == "nroot":
+                params = [int(param) for param in params]
+            else:
+                params = [str(param) for param in params]
 
-                if data:
+            answer = None
+            if method == "sort":
+                answer = self.method_hashmap[method](params)
+            else:
+                answer = self.method_hashmap[method](*params)
 
-                    try:
-                        data_str = data.decode("utf-8")
+            result_type = str(type(answer)).split("'")[1]
 
-                        print("Received data: {}".format(data_str))
+            response = {
+                "id": id,
+                "result_type": result_type,
+                "results": answer,
+            }
+        except Exception as e:
+            response = {"error": str(e), "id": received_data.get("id")}
+        except json.JSONDecodeError:
+            response = {"error": "Invalid JSON format", "id": None}
 
-                        receivedData = json.loads(data)
+        return json.dumps(response).encode()
 
-                        print(receivedData)
+class SocketServer:
+    def __init__(self, server_address, handler):
+        self.server_address = server_address
+        self.handler = handler
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
-                        method = receivedData["method"]
-                        params = receivedData["params"]
-                        id = receivedData["id"]
+    def start_server(self):
+        try:
+            os.unlink(self.server_address)
+        except FileNotFoundError:
+            pass
 
-                        if method == "floor":
-                            params = [float(param) for param in params]
-                        elif method == "nroot":
-                            params = [int(param) for param in params]
-                        else:
-                            params = [str(param) for param in params]
+        print("Starting up on {}".format(self.server_address))
+        self.sock.bind(self.server_address)
+        self.sock.listen(1)
 
-                        print(params)
+        while True:
+            connection, client_address = self.sock.accept()
+            try:
+                print("Connection from", client_address)
+                while True:
+                    data = connection.recv(1024)
+                    if data:
+                        print("Received data: {}".format(data.decode("utf-8")))
+                        response = self.handler.handle_request(data)
+                        connection.send(response)
+                    else:
+                        print("No data from", client_address)
+                        break
+            finally:
+                print("Closing current connection")
+                connection.close()
 
-                        try:
-                            answer = None
-                            if method == "sort":
-                                answer = method_hashmap[method](params)
-                            else:
-                                answer = method_hashmap[method](*params)
-
-                            print(answer)
-                            result_type = str(type(answer)).split("'")[1]
-                            print(result_type)
-
-                            response = {
-                                "results": answer,
-                                "result_type": result_type,
-                                "id": id,
-                            }
-
-                            print("answer data: {}".format(response))
-                        except Exception as e:
-                            response = {"error": str(e), "id": id}
-
-                    except json.JSONDecodeError:
-                        response = {"error": "Invalid JSON format", "id": None}
-
-                    connection.send(json.dumps(response).encode())
-                else:
-                    print("no data from", client_address)
-                    break
-
-        finally:
-            print("Closing current connection")
-            connection.close()
-
-
-main()
+if __name__ == "__main__":
+    request_handler = RequestHandler()
+    server_address = "./socket_file"
+    socket_server = SocketServer(server_address, request_handler)
+    socket_server.start_server()
