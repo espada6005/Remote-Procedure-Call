@@ -50,8 +50,6 @@ class RequestHandler:
             else:
                 params = [str(param) for param in params]
 
-            print(params)
-
             try:
                 answer = None
                 if method == "sort":
@@ -59,7 +57,6 @@ class RequestHandler:
                 else:
                     answer = self.method_hashmap[method](*params)
 
-                print(answer)
                 result_type = str(type(answer)).split("'")[1]
 
                 response = {
@@ -68,7 +65,6 @@ class RequestHandler:
                     "results": answer,
                 }
 
-                print("answer data: {}".format(response))
             except Exception as e:
                 response = {"id": id, "error": str(e)}
 
@@ -77,24 +73,25 @@ class RequestHandler:
 
         return json.dumps(response).encode()
 
-class UDPServer:
+class Server:
     def __init__(self, address, port, handler):
         self.server_address = (address, port)
         self.handler = handler
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    def start_server(self):
-        print("Starting up on {}".format(self.server_address))
+    def start_server(self):        
+        print(f"開始: {self.server_address}")
         self.sock.bind(self.server_address)
 
         while True:
             data, address = self.sock.recvfrom(4096)
             if data:
-                print("Received data: {}".format(data.decode("utf-8")))
+                print(f"受信データ: {data.decode("utf-8")}")
                 response = self.handler.handle_request(data)
+                print(f"返却データ: {response.decode("utf-8")}")
                 self.sock.sendto(response, address)
 
 if __name__ == "__main__":
     request_handler = RequestHandler()
-    server = UDPServer(ADDRESS, POST, request_handler)
+    server = Server(ADDRESS, POST, request_handler)
     server.start_server()

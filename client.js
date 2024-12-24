@@ -99,13 +99,13 @@ async function getParams() {
 
 function connectToServer() {
     client.send(JSON.stringify(requestData), 0, JSON.stringify(requestData).length, post, host, (err, bytes) => {
-        console.log("送信");
+        console.log(`リクエスト: ${JSON.stringify(requestData)}`);
     })
 }
 
 function setupClientHandlers() {
     client.on("message", (msg, rinfo) => {
-        console.log(msg.toString("utf-8"))
+        console.log(`レスポンス: ${msg.toString("utf-8")}`)
         client.close()
     })
 

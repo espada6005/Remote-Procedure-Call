@@ -93,7 +93,7 @@ async function getParams() {
 
 function connectToServer() {
     client.connect(server_address, () => {
-        console.log({ requestData });
+        console.log(`リクエスト: ${JSON.stringify(requestData)}`);
         client.write(JSON.stringify(requestData));
     });
 }

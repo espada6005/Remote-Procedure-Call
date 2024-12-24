@@ -36,9 +36,10 @@ class RequestHandler:
     def handle_request(self, data):
         try:
             received_data = json.loads(data)
+            id = received_data["id"]
             method = received_data["method"]
             params = received_data["params"]
-            id = received_data["id"]
+
 
             if method == "floor":
                 params = [float(param) for param in params]
@@ -63,7 +64,7 @@ class RequestHandler:
         except Exception as e:
             response = {"error": str(e), "id": received_data.get("id")}
         except json.JSONDecodeError:
-            response = {"error": "Invalid JSON format", "id": None}
+            response = {"id": None, "error": "Invalid JSON format"}
 
         return json.dumps(response).encode()
 
@@ -79,25 +80,24 @@ class SocketServer:
         except FileNotFoundError:
             pass
 
-        print("Starting up on {}".format(self.server_address))
+        print(f"開始: {self.server_address}")
         self.sock.bind(self.server_address)
         self.sock.listen(1)
 
         while True:
             connection, client_address = self.sock.accept()
             try:
-                print("Connection from", client_address)
                 while True:
                     data = connection.recv(1024)
                     if data:
-                        print("Received data: {}".format(data.decode("utf-8")))
+                        print(f"受信データ: {data.decode("utf-8")}")
                         response = self.handler.handle_request(data)
+                        print(f"返却データ: {response.decode("utf-8")}")
                         connection.send(response)
                     else:
-                        print("No data from", client_address)
                         break
             finally:
-                print("Closing current connection")
+                print("接続が閉じられました")
                 connection.close()
 
 if __name__ == "__main__":
